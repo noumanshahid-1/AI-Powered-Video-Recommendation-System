@@ -17,8 +17,12 @@ export RECSYS_ARTIFACTS="$(pwd)/artifacts"
 uvicorn api.main:app --reload --port 8000
 
 ## UI Preview
+
 ### 🔹 Homepage
+
 <img width="1920" height="1080" alt="Homepage" src="https://github.com/user-attachments/assets/941f7fe9-34f2-4814-907d-32e94a6dcd8f" />
+
 ### 🔹 Recommendations
+
 <img width="1920" height="1080" alt="result_page" src="https://github.com/user-attachments/assets/6960d3a1-5677-443d-a088-67838245999a" />
 
