@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎬%3C/text%3E%3C/svg%3E">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Powered Personalized Video Recommendation System</title>
+  <style>
+    :root{
+      --bg1:#7b4397; --bg2:#dc2430;
+      --card:#1b2338; --muted:#b9c5ec; --txt:#eef2ff; --brand:#8ab4ff;
+      --cf:#ffb86b; --cb:#7aa7ff; --border: rgba(255,255,255,.12);
+      --chip:#0e1530; --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --drawer:#0e1530cc;
+    }
+    html[data-theme="light"]{
+      --bg1:#f9fbff; --bg2:#e8efff;
+      --card:#ffffff; --muted:#5d6b8a; --txt:#0e1220; --brand:#3b6cff;
+      --cf:#e58b24; --cb:#2f6dff; --border: rgba(0,0,0,.12);
+      --chip:#f2f5ff; --shadow: 0 6px 18px rgba(0,0,0,.08);
+      --drawer:#ffffffee;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--txt);
+      background: radial-gradient(1200px 800px at 20% 0%, var(--bg1) 0%, #5c2e7f 35%, #3c254f 60%, var(--bg2) 100%);
+      min-height:100vh;
+    }
+
+    .wrap{max-width:1450px;margin:24px auto;padding:0 16px}
+    .layout{
+      display:grid;
+      grid-template-columns:240px 1fr;
+      gap:10px;
+      align-items:start;
+      padding-left:5px;
+    }
+    @media (max-width:1100px){ .layout{grid-template-columns:1fr} }
+
+    .page-header{grid-column:1/-1}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+    .stage{padding:16px}
+    .title{font-weight:900;font-size:28px;letter-spacing:.2px;text-align:center}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+    input,button,select{
+      border-radius:12px;border:1px solid var(--border);
+      background:var(--chip);color:var(--txt);padding:10px 12px
+    }
+    button{background:var(--brand);border:none;color:#0a0f20;font-weight:700;cursor:pointer}
+    button.secondary{background:var(--chip);color:var(--txt);border:1px solid var(--border)}
+    button.danger{
+    background:#e53935;
+    color:#fff;
+   }
+
+    .pill{padding:6px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .legend{display:flex;gap:12px;align-items:center}
+    .dot{width:12px;height:12px;border-radius:50%}
+    .dot.cf{background:var(--cf)} .dot.cb{background:var(--cb)}
+
+    .sidebar{position:sticky; top:16px; height:fit-content}
+    .sidebar .sec{padding:16px}
+    .sidebar h3{margin:0 0 10px 0;font-size:16px}
+    .list{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
+    .legend-row{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
+    .lab-row{display:flex;align-items:center;gap:8px;margin:8px 0;color:var(--muted);font-size:13px}
+    .range{width:100%}
+
+    .sections{display:flex;flex-direction:column;gap:18px}
+    .section{padding:16px}
+    .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .sec-title{margin:0;font-size:18px;font-weight:800}
+    .sec-actions{display:flex;gap:8px}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+    .tab{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--chip);cursor:pointer;font-size:13px}
+    .tab.active{background:var(--brand);color:#0a0f20;border-color:transparent}
+
+    .divider{height:1px;background:var(--border);margin:10px 0}
+
+    .grid{display:grid;gap:14px;margin-top:6px;grid-template-columns:repeat(5, 1fr)}
+    @media (max-width:1100px){ .grid{grid-template-columns:repeat(4,1fr)} }
+    @media (max-width:900px){ .grid{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:640px){ .grid{grid-template-columns:repeat(2,1fr)} }
+
+    .tile{padding:0;overflow:hidden;border-radius:12px;transition:.2s transform;display:flex;flex-direction:column}
+    .tile:hover{transform:translateY(-2px)}
+    .poster{height:200px;width:100%;display:block}
+    .tile-body{display:flex;flex-direction:column;padding:14px;min-height:220px}
+    .meta-block{flex:1 1 auto}
+    .title-card{font-weight:700;margin:4px 0 6px}
+    .genres{color:var(--muted);font-size:13px;margin-bottom:8px}
+    .why{color:#dfe6ff;font-size:12px;opacity:.9;margin-top:6px}
+    .mixbar{height:6px;width:100%;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;margin-top:8px}
+    .mixbar .cf{display:inline-block;height:100%;background:var(--cf)}
+    .mixbar .cb{display:inline-block;height:100%;background:var(--cb)}
+    .row.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:auto}
+    .link{background:transparent;border:none;color:var(--brand);cursor:pointer;padding:0;font-size:12px}
+
+    .sec-table{margin-top:12px;padding:12px}
+    table.meta{width:100%;border-collapse:collapse}
+    table.meta th, table.meta td{border-bottom:1px solid var(--border);padding:6px 8px;text-align:left}
+    table.meta th{color:var(--muted);font-weight:700;font-size:12px}
+    table.meta td{font-size:12px}
+
+    .drawer {
+      position: fixed; top: 0; right: -420px; width: 420px; height: 100vh;
+      background: var(--drawer); backdrop-filter: blur(6px);
+      border-left: 1px solid var(--border); box-shadow: var(--shadow);
+      transition: right .25s ease; z-index: 99; padding: 16px; overflow:auto;
+    }
+    .drawer.open { right: 0; }
+    .drawer h3{margin:0 0 10px 0}
+    .drawer .close{float:right;background:transparent;border:none;color:var(--txt);font-size:18px;cursor:pointer}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--border);margin-right:6px;font-size:12px;color:var(--muted)}
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--brand); color: #0a0f20;
+      padding: 12px 18px; border-radius: 10px; font-weight: 600;
+      box-shadow: var(--shadow); opacity: 0; pointer-events: none;
+      transition: opacity .4s, transform .4s; transform: translateY(20px);
+      z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="page-header card stage">
+      <div class="title">AI-Powered Personalized Video Recommendation System</div>
+      <div class="controls">
+        <input id="userId" type="number" placeholder="User ID (internal u)" style="width:160px" />
+        <select id="alpha">
+          <option value="0.7" selected>α 0.7</option>
+          <option value="0.6">α 0.6</option>
+          <option value="0.5">α 0.5</option>
+          <option value="0.4">α 0.4</option>
+        </select>
+        <button id="btnReco">Recommend</button>
+        <button class="secondary" id="btnRefresh" title="Re-run for current user / alpha">Refresh</button>
+        <input id="q" placeholder="Search title…" style="width:240px" />
+        <button class="secondary" id="btnSearch">Search</button>
+        <button class="secondary" id="btnTheme">🌓 Theme</button>
+        <span class="pill">API: <span id="apiStatus">checking…</span></span>
+        <span class="legend">
+          <span class="dot cf" title="Collaborative Filtering"></span><span class="pill">CF</span>
+          <span class="dot cb" title="Content-Based"></span><span class="pill">CB</span>
+        </span>
+      </div>
+      <div class="tabs" id="userTabs"></div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="card sec">
+          <h3>Quick facts</h3>
+          <div class="legend-row"><span class="dot cf"></span> <span>CF = Collaborative Filtering</span></div>
+          <div class="legend-row"><span class="dot cb"></span> <span>CB = Content-Based</span></div>
+          <ul class="list">
+            <li>Top-10 results shown (2×5 grid).</li>
+            <li>“Show similar” opens a new section with its table.</li>
+            <li>Like/Skip refines your profile.</li>
+          </ul>
+        </div>
+        <div class="card sec">
+          <h3>Alpha guide</h3>
+          <ul class="list">
+            <li>α = 0.7 → stronger CF (neighbors)</li>
+            <li>α = 0.6 → CF-leaning hybrid</li>
+            <li>α = 0.5 → balanced CF/CB</li>
+            <li>α = 0.4 → CB-leaning hybrid</li>
+          </ul>
+        </div>
+
+        <div class="card sec" id="lab">
+          <h3>Personalization Lab</h3>
+          <label class="lab-row">
+            <input type="checkbox" id="noveltyToggle"> Prefer novelty (less popular)
+          </label>
+          <div class="lab-row">
+            <span>MMR λ</span>
+            <input id="mmr" class="range" type="range" min="0" max="0.5" step="0.05" value="0">
+            <span id="mmrVal" class="pill">0.00</span>
+          </div>
+          <div class="divider"></div>
+          <div class="lab-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap">
+            <button id="btnSave" class="secondary">Save Session</button>
+            <button id="btnLoad" class="secondary">Load Session</button>
+            <button id="btnResetAll" class="danger">Reset All Sessions</button>
+          </div>
+          <div id="labMsg" class="list" style="margin-top:8px;"></div>
+
+        </div>
+      </aside>
+
+      <main>
+        <section class="card stage">
+          <div id="sections" class="sections"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Why Drawer -->
+  <div id="drawer" class="drawer">
+    <button class="close" id="drawerClose">✕</button>
+    <h3>Why this recommendation?</h3>
+    <div id="drawerBody"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ===== Helpers / Globals =====
+    const API_BASE = "";
+    const ABS = p => p.startsWith("/") ? p : `/${p}`;
+    const $ = sel => document.querySelector(sel);
+
+    let activeUserId = null;
+    const tabs = new Map();     // userId -> button
+    const sections = new Map(); // key -> {wrap,titleEl,gridEl,tableEl,lastRows, owner, simM, baseRows}
+    const reqToken = { current: 0 }; // prevent stale paints
+
+    const tabsEl = $('#userTabs');
+    const sectionsHost = $('#sections');
+
+    function normUserId(u){
+      const n = Number(String(u ?? "").trim());
+      return Number.isFinite(n) ? n : null;
+    }
+    function showToast(msg, ms=2200){
+      const t = $('#toast'); if (!t) return;
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), ms);
+    }
+
+    // ===== Theme =====
+    (function initTheme(){
+      const saved = localStorage.getItem("recsys_theme");
+      if(saved) document.documentElement.setAttribute("data-theme", saved);
+      $('#btnTheme').addEventListener('click', ()=>{
+        const cur = document.documentElement.getAttribute("data-theme") || "dark";
+        const next = cur === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("recsys_theme", next);
+      });
+    })();
+
+    // ===== Health =====
+    async function checkApi(){
+      try{
+        const r = await fetch(ABS(`${API_BASE}/health`), {cache: "no-store"});
+        const j = await r.json();
+        $('#apiStatus').textContent = j.status || 'ok';
+      }catch{ $('#apiStatus').textContent = 'offline'; }
+    }
+    checkApi();
+
+    // ===== Poster helpers =====
+    function initials(title){
+      if(!title) return "??";
+      const parts = String(title).split(/\s+/).filter(Boolean);
+      const a = parts[0]?.[0] || '';
+      const b = (parts[1]?.[0] || parts[0]?.[1] || '');
+      return (a + b).toUpperCase();
+    }
+    function seededRand(seed){ let x = Math.sin((seed||1)*99991) * 10000; return x - Math.floor(x); }
+    function hueFor(id){ return Math.floor(seededRand(id) * 360); }
+    function posterDataURL(title, genres, movieId){
+      const h = hueFor(movieId || 0), h2 = (h + 55) % 360, txt = initials(title);
+      const tag = (genres||'').split(' / ')[0]||'';
+      const svg =
+        `<svg xmlns='http://www.w3.org/2000/svg' width='480' height='720'>
+          <defs><linearGradient id='g' x1='0' y='0' x2='1' y2='1'>
+            <stop offset='0%' stop-color='hsl(${h},75%,48%)'/>
+            <stop offset='100%' stop-color='hsl(${h2},70%,36%)'/>
+          </linearGradient></defs>
+          <rect width='100%' height='100%' fill='url(#g)'/>
+          <text x='50%' y='54%' font-family='Inter,Segoe UI,Roboto,Arial' font-size='180' font-weight='900'
+                text-anchor='middle' fill='rgba(255,255,255,.96)'>${txt}</text>
+          <text x='50%' y='685' font-family='Inter,Segoe UI,Roboto,Arial' font-size='36' font-weight='600'
+                text-anchor='middle' fill='rgba(255,255,255,.88)'>${tag}</text>
+        </svg>`;
+      return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    }
+
+    // ===== Tabs (created on demand only) =====
+    function ensureTab(userId){
+      userId = normUserId(userId);
+      if (userId == null) return null;
+      if (tabs.has(userId)) return tabs.get(userId);
+
+      const t = document.createElement('button');
+      t.className = 'tab';
+      t.textContent = `User ${userId}`;
+      t.dataset.uid = String(userId);
+      t.addEventListener('click', async ()=>{
+        activateTab(userId);
+        await recommendForUser(userId, parseFloat($('#alpha').value || '0.7'));
+      });
+      tabs.set(userId, t);
+      tabsEl.appendChild(t);
+      return t;
+    }
+
+    function activateTab(userId){
+      userId = normUserId(userId);
+      if (userId == null) return;
+      const btn = tabs.get(userId) || ensureTab(userId);
+      if (!btn) return;
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      activeUserId = userId;
+      $('#userId').value = String(userId);
+      showOnlyOwner(userId);
+    }
+
+    // ===== Sections =====
+    function mixbarHTML(cf, cb){
+      if (cf == null || cb == null) return '';
+      const cfw = Math.max(0, Number(cf)||0);
+      const cbw = Math.max(0, Number(cb)||0);
+      const sum = (cfw + cbw) || 1;
+      const cfPct = Math.round((cfw / sum) * 100);
+      const cbPct = 100 - cfPct;
+      return `<div class="mixbar"><span class="cf" style="width:${cfPct}%"></span><span class="cb" style="width:${cbPct}%"></span></div>`;
+    }
+    function cardHTML(x){
+      // SVG fallback (always available)
+      const fallback = posterDataURL(x.title, x.genres, x.movieId || x.item_index);
+
+      // Try to use real poster from backend:
+      // 1) if x.poster is provided (filename like "12345.jpg")
+      // 2) else try posters/<movieId>.jpg
+      let posterSrc = fallback;
+      if (x.poster) {
+        const clean = String(x.poster).replace(/^[/\\]+/, "");
+        posterSrc = ABS(`posters/${clean}`);
+      } else if (x.movieId && x.movieId > 0) {
+        posterSrc = ABS(`posters/${x.movieId}.jpg`);
+      }
+
+      const g = x.genres ? `<div class="genres">${x.genres}</div>` : '';
+      const whyText = (x.why || '').replace(/because you liked user\s*\d+/ig, 'Recommended for you');
+      const why = whyText ? `<div class="why">${whyText}</div>` : '';
+      const mix = (x.cf!=null && x.cb!=null) ? mixbarHTML(x.cf, x.cb) : '';
+
+      return `
+        <div class="tile card">
+          <img
+            class="poster"
+            src="${posterSrc}"
+            alt=""
+            onerror="this.onerror=null; this.src='${fallback}'"
+          >
+          <div class="tile-body">
+            <div class="meta-block">
+              <div class="title-card">${x.title || 'Untitled'}</div>
+              ${g}
+              ${mix}
+              ${why}
+            </div>
+            <div class="row actions">
+              <button data-like="${x.item_index}" class="btn-like">👍 Like</button>
+              <button data-skip="${x.item_index}" class="btn-skip secondary">Skip</button>
+              <button data-why="${x.item_index}" class="link btn-why">Why?</button>
+              <button data-sim="${x.item_index}" class="btn-sim secondary">Show similar</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+
+
+
+
+    function tableHTML(rows){
+      const top10 = rows.slice(0,10);
+      const cells = top10.map(r => `
+        <tr>
+          <td>${r.movieId}</td>
+          <td>${r.title || ''}</td>
+          <td>${r.genres || ''}</td>
+          <td>${(r.score ?? 0).toFixed(3)}</td>
+          <td>${r.cf!=null ? (+r.cf).toFixed(3) : ''}</td>
+          <td>${r.cb!=null ? (+r.cb).toFixed(3) : ''}</td>
+          <td>${(r.why||'').replace(/because you liked user\s*\d+/ig,'Recommended for you')}</td>
+        </tr>`).join('');
+      return `
+        <table class="meta">
+          <thead>
+            <tr><th>movieId</th><th>Title</th><th>Genres</th><th>Score</th><th>CF</th><th>CB</th><th>Reason</th></tr>
+          </thead>
+          <tbody>${cells}</tbody>
+        </table>`;
+    }
+
+    function ensureSection(key, title, owner){
+      if (sections.has(key)) {
+        const s = sections.get(key);
+        s.titleEl.textContent = title;
+        s.owner = owner;
+        s.wrap.dataset.owner = owner ?? '';
+        return s;
+      }
+      const wrap = document.createElement('section');
+      wrap.className = 'section card';
+      wrap.dataset.owner = owner ?? '';
+      wrap.innerHTML = `
+        <div class="sec-head">
+          <h3 class="sec-title"></h3>
+          <div class="sec-actions">
+            <button class="secondary btn-toggle" data-sec="${key}">Toggle Table</button>
+          </div>
+        </div>
+        <div class="grid" id="grid-${key}"></div>
+        <div class="sec-table card" id="table-${key}" style="display:none;"></div>
+        <div class="divider"></div>`;
+      sectionsHost.appendChild(wrap);
+      const titleEl = wrap.querySelector('.sec-title');
+      const gridEl  = wrap.querySelector(`#grid-${key}`);
+      const tableEl = wrap.querySelector(`#table-${key}`);
+      const obj = {wrap, titleEl, gridEl, tableEl, lastRows: [], owner, simM: null, baseRows: []};
+      titleEl.textContent = title;
+      sections.set(key, obj);
+      return obj;
+    }
+
+    function showOnlyOwner(owner){
+      document.querySelectorAll('.section.card').forEach(sec=>{
+        const o = sec.dataset.owner;
+        sec.style.display = (String(o) === String(owner)) ? '' : 'none';
+      });
+    }
+
+    function renderRowsIntoSection(sec, rows){
+      const top10 = rows.slice(0,10);
+      sec.lastRows = top10;
+      if (!sec.baseRows.length) sec.baseRows = top10.slice();
+      sec.gridEl.innerHTML = top10.map(cardHTML).join('');
+      if (sec.tableEl.style.display !== 'none') {
+        sec.tableEl.innerHTML = tableHTML(top10);
+      }
+    }
+
+    // ===== Client-side MMR =====
+    function rerankSectionMMR(secKey, lambda){
+      const sec = sections.get(secKey);
+      if (!sec || !sec.baseRows || !sec.baseRows.length || !sec.simM) return;
+      const rows = sec.baseRows.slice();
+      const scores = rows.map(r => +r.score || 0);
+      const sims = sec.simM;
+
+      const N = rows.length;
+      const selected = [];
+      const avail = new Set([...Array(N).keys()]);
+      while (selected.length < N){
+        let best = -1, bestVal = -1e9;
+        for (const i of avail){
+          let maxSim = 0;
+          if (selected.length){
+            for (const j of selected){
+              maxSim = Math.max(maxSim, sims[i][j] || 0);
+            }
+          }
+          const val = (1 - lambda) * scores[i] - lambda * maxSim;
+          if (val > bestVal){ bestVal = val; best = i; }
+        }
+        selected.push(best);
+        avail.delete(best);
+      }
+      const reRows = selected.map(i => rows[i]);
+      sec.lastRows = reRows;
+      sec.gridEl.innerHTML = reRows.map(cardHTML).join('');
+      if (sec.tableEl.style.display !== 'none') {
+        sec.tableEl.innerHTML = tableHTML(reRows);
+      }
+    }
+
+    // ===== Networking helpers =====
+    async function safeJson(r){
+      let body = null;
+      try { body = await r.text(); } catch {}
+      try { return { ok: r.ok, json: body ? JSON.parse(body) : null, body, status: r.status }; }
+      catch { return { ok: r.ok, json: null, body, status: r.status }; }
+    }
+
+    // ===== Core Actions =====
+    async function recommendForUser(u, a){
+      const token = ++reqToken.current;
+      const novelty = $('#noveltyToggle').checked ? 1 : 0;
+      const key = `main-u${u}`;
+      const sec = ensureSection(key, `Top-10 for user ${u} (α = ${a.toFixed(2)}${novelty? ", novelty":""})`, u);
+      sec.gridEl.innerHTML = 'Loading…';
+      sec.tableEl.style.display = 'none';
+      showOnlyOwner(u);
+
+      let r, parsed;
+      try{
+        r = await fetch(ABS(`${API_BASE}/recommendations?user_id=${u}&k=10&alpha=${a}&diversified=true&novelty=${novelty}&with_sim=1&_=${Date.now()}`), {cache:"no-store"});
+        parsed = await safeJson(r);
+      }catch(e){
+        if (reqToken.current !== token) return;
+        sec.gridEl.innerHTML = 'Failed to load.';
+        return;
+      }
+      if (reqToken.current !== token) return;
+
+      if (!parsed.ok){
+        const msg = parsed.body || `HTTP ${parsed.status}`;
+        sec.gridEl.innerHTML = `Error: ${msg}`;
+        return;
+      }
+      const j = parsed.json;
+      if(!j || !j.results){ sec.gridEl.innerHTML = 'No results.'; return; }
+
+      sec.simM = j.sim_matrix || null;
+      sec.baseRows = j.results.slice(0,10);
+      renderRowsIntoSection(sec, j.results);
+
+      const lambda = parseFloat($('#mmr').value || '0');
+      if (lambda > 0) rerankSectionMMR(key, lambda);
+    }
+
+    async function recommend(){
+  const typed = normUserId($('#userId').value);        // ← input takes priority
+  const u = (typed != null) ? typed : activeUserId;    // fall back to active tab
+  const a = parseFloat($('#alpha').value || '0.7');
+  if (u == null) { alert('Enter a numeric internal user ID (column u).'); return; }
+
+  ensureTab(u);        // create tab if new
+  activateTab(u);      // switch to it
+  await recommendForUser(u, a);
+}
+
+
+    async function refresh(){
+  const typed = normUserId($('#userId').value);
+  const u = (typed != null) ? typed : activeUserId;
+  const a = parseFloat($('#alpha').value || '0.7');
+  if (u == null) { alert('Enter a user id first.'); return; }
+
+  const btn = $('#btnRefresh');
+  const prev = btn.textContent;
+  btn.textContent = 'Refreshing…';
+  btn.disabled = true;
+
+  try{
+    ensureTab(u);
+    activateTab(u);
+    await recommendForUser(u, a);
+    showToast(`Refreshed for User ${u} (α=${a.toFixed(2)})`);
+  } finally {
+    btn.textContent = prev;
+    btn.disabled = false;
+  }
+}
+
+
+    async function search(){
+      const q = ($('#q').value || '').trim();
+      if(!q) return;
+      const key = `search-${Date.now()}`;
+      const sec = ensureSection(key, `Search: “${q}”`, 'search');
+      sec.gridEl.innerHTML = 'Searching…';
+      sec.tableEl.style.display = 'none';
+      try{
+        const r = await fetch(ABS(`${API_BASE}/search?q=${encodeURIComponent(q)}&_=${Date.now()}`), {cache:"no-store"});
+        const p = await safeJson(r);
+        if (!p.ok){ sec.gridEl.innerHTML = `Error: ${p.body || p.status}`; return; }
+        const j = p.json;
+        if(!j.results || j.results.length===0){ sec.gridEl.innerHTML = 'No matches.'; return; }
+        renderRowsIntoSection(sec, j.results);
+      }catch{
+        sec.gridEl.innerHTML = 'Failed to search.';
+      }
+    }
+
+    async function interact(e){
+      const like = e.target.getAttribute('data-like');
+      const skip = e.target.getAttribute('data-skip');
+      if (!like && !skip) return;
+
+      const u = (activeUserId != null) ? activeUserId : normUserId($('#userId').value);
+      if (u == null) { showToast('Pick a user first'); return; }
+
+      const payload = (idx, action)=>({user_id:u, item_index:+idx, action});
+      const tile = e.target.closest('.tile');
+      try{
+        if(like){
+          if (tile) tile.style.outline='2px solid #66e28a';
+          await fetch(ABS(`/interact`), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload(like,'like'))});
+        }
+        if(skip){
+          if (tile) tile.style.opacity=0.6;
+          await fetch(ABS(`/interact`), {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload(skip,'skip'))});
+        }
+      }catch{}
+    }
+
+        async function saveSession(){
+      const typed = normUserId($('#userId').value);
+      const u = (typed != null) ? typed : activeUserId;
+      if (u == null) { showToast('Pick a user first'); return; }
+
+      const btn = $('#btnSave');
+      const prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+
+      try{
+        const r = await fetch(ABS(`/session/save?user_id=${u}`), {cache:'no-store'});
+        const p = await safeJson(r);
+        if (!p.ok || !p.json || !p.json.ok){
+          showToast('Failed to save session');
+          return;
+        }
+        const j = p.json;
+        const likes = j.counts?.likes ?? j.likes ?? 0;
+        const skips = j.counts?.skips ?? j.skips ?? 0;
+        $('#labMsg').textContent = `Saved session for user ${u} (likes: ${likes}, skips: ${skips}).`;
+        showToast(`Session saved for user ${u}`);
+      }catch{
+        showToast('Error while saving session');
+      }finally{
+        btn.textContent = prev;
+        btn.disabled = false;
+      }
+    }
+
+    async function loadSession(){
+      const typed = normUserId($('#userId').value);
+      const u = (typed != null) ? typed : activeUserId;
+      if (u == null) { showToast('Pick a user first'); return; }
+
+      const btn = $('#btnLoad');
+      const prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Loading…';
+
+      try{
+        const r = await fetch(ABS(`/session/load?user_id=${u}`), {cache:'no-store'});
+        const p = await safeJson(r);
+        if (!p.ok || !p.json || !p.json.ok){
+          showToast('Failed to load session');
+          return;
+        }
+        const j = p.json;
+        $('#labMsg').textContent =
+          `Loaded session for user ${u} (likes: ${j.likes ?? 0}, skips: ${j.skips ?? 0}).`;
+        showToast(`Session loaded for user ${u}`);
+        // Re-run recommendations so UI reflects loaded likes/skips
+        await recommend();
+      }catch{
+        showToast('Error while loading session');
+      }finally{
+        btn.textContent = prev;
+        btn.disabled = false;
+      }
+    }
+
+    async function resetAllSessions(){
+      if (!confirm('Reset ALL sessions for ALL users?')) return;
+
+      const btn = $('#btnResetAll');
+      const prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Resetting…';
+
+      try{
+        const r = await fetch(ABS(`/session/clear_all`), {
+          method:'POST',
+          headers:{'Content-Type':'application/json'}
+        });
+        const p = await safeJson(r);
+        if (!p.ok || !p.json || !p.json.ok){
+          showToast('Failed to reset sessions');
+          return;
+        }
+        $('#labMsg').textContent = 'All sessions cleared for all users.';
+        showToast('All sessions have been reset');
+
+        // Optional: clear UI tabs/sections
+        tabs.clear();
+        sections.clear();
+        tabsEl.innerHTML = '';
+        sectionsHost.innerHTML = '';
+        activeUserId = null;
+      }catch{
+        showToast('Error while resetting sessions');
+      }finally{
+        btn.textContent = prev;
+        btn.disabled = false;
+      }
+    }
+
+
+    // ===== “Why” Drawer (user-scoped) =====
+    const drawer = $('#drawer');
+    const drawerBody = $('#drawerBody');
+    $('#drawerClose').addEventListener('click', ()=>drawer.classList.remove('open'));
+
+    function listHTML(arr, label){
+      if(!arr || !arr.length) return '';
+      const items = arr.map(s=>`
+        <li style="margin:6px 0">
+          <span class="badge">${label}</span>
+          <strong>${s.title}</strong>
+          ${s.genres ? `<span class="badge">Genres: ${s.genres}</span>` : ``}
+          ${Number.isFinite(s.pop_percentile) ? `<span class="badge">Rating~ ${s.pop_percentile.toFixed(0)}%</span>` : ``}
+        </li>`).join('');
+      return `<ul style="padding-left:18px;margin:6px 0 0 0">${items}</ul>`;
+    }
+
+    async function openWhy(itemIndex){
+      const u = (activeUserId != null) ? activeUserId : normUserId($('#userId').value);
+      if (u == null){ showToast('Pick a user first'); return; }
+      const a = parseFloat($('#alpha').value || '0.7');
+
+      drawerBody.innerHTML = 'Loading…';
+      drawer.classList.add('open');
+      try{
+        const r = await fetch(ABS(`/explain?user_id=${u}&item_index=${encodeURIComponent(itemIndex)}&alpha=${a}&_=${Date.now()}`), {cache:"no-store"});
+        const p = await safeJson(r);
+        if (!p.ok){ drawerBody.innerHTML = `Error: ${p.body || p.status}`; return; }
+        const j = p.json;
+
+        const likeMax = Math.max(...((j.similar_from_likes||[]).map(x=>+x.sim||0)), 0);
+        const skipMax = Math.max(...((j.similar_from_skips||[]).map(x=>+x.sim||0)), 0);
+        let whyText = j.why || '—';
+        if (skipMax > likeMax && skipMax > 0){
+          whyText = 'Similar to items you skipped (down-weighted).';
+        }
+
+        const likesHTML  = listHTML(j.similar_from_likes, 'Liked');
+        const skipsHTML  = listHTML(j.similar_from_skips, 'Skipped');
+
+        drawerBody.innerHTML = `
+          <p>${whyText}</p>
+          ${j.genres ? `<p><span class="badge">Genres: ${j.genres}</span></p>` : ''}
+          ${Number.isFinite(j.pop_percentile) ? `<p><span class="badge">Rating~ ${j.pop_percentile.toFixed(0)}%</span></p>` : ''}
+          ${likesHTML}
+          ${skipsHTML}
+        `;
+      }catch{
+        drawerBody.innerHTML = 'Failed to load explanation.';
+      }
+    }
+
+    // ===== Events =====
+    document.addEventListener('click', async (e)=>{
+      if(e.target.matches('.btn-like') || e.target.matches('.btn-skip')) { await interact(e); }
+      if(e.target.matches('.btn-toggle')){
+        const key = e.target.getAttribute('data-sec');
+        const sec = sections.get(key);
+        if(!sec) return;
+        if (sec.tableEl.style.display === 'none'){
+          sec.tableEl.innerHTML = tableHTML(sec.lastRows || []);
+          sec.tableEl.style.display = 'block';
+        } else {
+          sec.tableEl.style.display = 'none';
+        }
+      }
+      if(e.target.matches('.btn-sim')){
+        const idx = e.target.getAttribute('data-sim');
+        if(!idx) return;
+        const u = (activeUserId != null) ? activeUserId : normUserId($('#userId').value);
+        if (u == null){ showToast('Pick a user first'); return; }
+        const a = parseFloat($('#alpha').value || '0.7');
+
+        const owner = u;
+        const secKey = `sim-u${owner}-${idx}-${Date.now()}`;
+        const temp = ensureSection(secKey, `Similar (loading…)`, owner);
+        temp.gridEl.innerHTML = 'Finding similar…';
+        temp.tableEl.style.display = 'none';
+
+        try{
+          const r = await fetch(ABS(`/similar?item_index=${encodeURIComponent(idx)}&k=10&user_id=${u}&alpha=${a}&_=${Date.now()}`), {cache:"no-store"});
+          const p = await safeJson(r);
+          if (!p.ok){ temp.gridEl.innerHTML = `Error: ${p.body || p.status}`; return; }
+          const j = p.json;
+          const title = j?.base_item?.title ? `Similar to: ${j.base_item.title}` : 'Similar results';
+          const sec = ensureSection(secKey, title, owner);
+          renderRowsIntoSection(sec, j.results || []);
+          showOnlyOwner(owner);
+        }catch{
+          temp.gridEl.innerHTML = 'Failed to load similar.';
+        }
+      }
+      if(e.target.matches('.btn-why')){
+        const idx = e.target.getAttribute('data-why');
+        if(!idx) return;
+        openWhy(idx);
+      }
+    });
+
+
+    // Buttons
+    $('#btnReco').addEventListener('click', recommend);
+    $('#btnRefresh').addEventListener('click', refresh);
+    $('#btnSearch').addEventListener('click', search);
+    $('#btnSave').addEventListener('click', saveSession);
+    $('#btnLoad').addEventListener('click', loadSession);
+    $('#btnResetAll').addEventListener('click', resetAllSessions);
+
+    // Enter in userId creates a tab and recommends
+    $('#userId').addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter'){
+    const id = normUserId(e.target.value);
+    if (id == null) { showToast('Enter a valid user id'); return; }
+    ensureTab(id);
+    activateTab(id);
+    recommend();   // uses the typed id above
+  }
+});
+
+
+    // MMR live
+    $('#mmr').addEventListener('input', (e)=>{
+      const v = parseFloat(e.target.value || '0');
+      $('#mmrVal').textContent = v.toFixed(2);
+      if (activeUserId != null){
+        const key = `main-u${activeUserId}`;
+        rerankSectionMMR(key, v);
+      }
+    });
+  </script>
+</body>
+</html>
